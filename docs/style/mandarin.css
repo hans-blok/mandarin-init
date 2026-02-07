@@ -11,7 +11,7 @@
    ============================================ */
 :root {
   /* Kleuren - Mandarin branding */
-  --color-mandarin-oranje: #FF8C42;
+  --color-mandarin-oranje: #e9b290;
   --color-mandarin-blauw: #4A90E2;
   --color-text-primary: #2C3E50;
   --color-text-secondary: #5A6C7D;
@@ -518,9 +518,27 @@ img, svg, video {
   cursor: pointer;
 }
 
-/* Optioneel: logo iets groter op mobiel */
+/* Logo in de primaire sidebar boven het navigatiepaneel */
+.md-sidebar--primary .md-sidebar__inner::before {
+  content: "";
+  display: block;
+  height: 120px;
+  margin: var(--spacing-lg) var(--spacing-md);
+  background-image: url('../assets/mandarin-logo-m.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+/* Logo groter in de header */
+.md-logo img {
+  max-width: 160px;
+  height: auto;
+}
+
+/* Op mobiel mag het nog iets ruimer */
 @media (max-width: 768px) {
   .md-logo img {
-    max-width: 120px;
+    max-width: 180px;
   }
 }

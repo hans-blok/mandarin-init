@@ -57,7 +57,7 @@ theme:
 # Eigendom: Presentatie Architect
 # ------------------------------------------------------------
 extra_css:
-  - styles/mandarin.css
+  - style/mandarin.css
 
 extra_javascript: []
 
@@ -116,9 +116,6 @@ markdown_extensions:
 nav:
   - Home: index.md
   
-  - Strategie:
-      - Fundamentele Hypothese: fundamentele-hypothese.md
-      - Strategische Intenties: strategische-intenties.md
 
 # ------------------------------------------------------------
 # 8. Extra Configuratie
@@ -130,7 +127,7 @@ extra:
 # ------------------------------------------------------------
 # 9. Copyright
 # ------------------------------------------------------------
-copyright: "Copyright &copy; 2026 Mandarin Team"
+copyright: "Copyright &copy; 2026 Maxia Consultancy. Alle rechten voorbehouden."
 
 # ------------------------------------------------------------
 # Metadata

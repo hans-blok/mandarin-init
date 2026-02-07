@@ -14,3 +14,11 @@ Een nieuwe workspace opzetten met deze generieke bestanden:
 
 Na deze stappen is de workspace klaar om in VS Code verder te gebruiken.
 
+## install
+in shell: pip install -r requirements.txt
+
+## mkdocs renderen
+<!--> kies een poort bijvoorbeeld 8005 -->
+mkdocs serve -a 127.0.0.1:8005
+
+http://127.0.0.1:8005/
