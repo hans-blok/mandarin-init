@@ -1,0 +1,27 @@
+{
+  "mandarin.agent.runner": {
+    "enabled": true,
+    "script": "scripts/runners/mandarin_agent_runner.py",
+    "mode": "after-every-action"
+  },
+  "workbench.colorCustomizations": {
+    "activityBar.activeBackground": "#cfa2e2",
+   "activityBar.background": "#dbb8eb",
+   "activityBar.foreground": "#15202b",
+ //   "activityBar.inactiveForeground": "#15202b99",
+ //   "activityBarBadge.background": "#6f5c30",
+//  "activityBarBadge.foreground": "#e7e7e7",
+//    "commandCenter.border": "#e7e7e799",
+    //"sash.hoverBorder": "#b07cc6",
+//"statusBar.background": "#9b59b6",
+ //   "statusBar.foreground": "#e7e7e7",
+ //   "statusBarItem.hoverBackground": "#b07cc6",
+ //   "statusBarItem.remoteBackground": "#9b59b6",
+ //   "statusBarItem.remoteForeground": "#e7e7e7",
+    "titleBar.activeBackground": "#d0aedd",
+ //   "titleBar.activeForeground": "#e7e7e7",
+    "titleBar.inactiveBackground": "#e7e7e699",
+    "titleBar.inactiveForeground": "#e7e7e799"
+  },
+  "peacock.color": "#9b59b6"
+}

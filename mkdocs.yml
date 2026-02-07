@@ -1,0 +1,142 @@
+# ============================================================
+# MkDocs Configuration — Mandarin Startup
+# Owner: Publicatie Steward
+# Doel: Publicatie van strategische documentatie
+# ============================================================
+
+# ------------------------------------------------------------
+# 1. Site Identiteit
+# ------------------------------------------------------------
+site_name: "Mandarin Startup"
+site_description: "Strategische documentatie voor Product Mandarin - Agent-ecosysteem voor expliciete, governable en traceerbare softwareontwikkeling"
+site_author: "Mandarin Team"
+site_url: "https://mandarin-startup.github.io/"
+
+# Optioneel: repository referentie
+# repo_name: "mandarin-startup"
+# repo_url: "https://github.com/username/mandarin-startup"
+# edit_uri: "edit/main/docs/"
+
+# ------------------------------------------------------------
+# 2. Documentatie Bron
+# ------------------------------------------------------------
+docs_dir: "docs"
+site_dir: "site"
+
+# ------------------------------------------------------------
+# 3. Theme & Presentatie
+# Mandarin huisstijl met Material theme
+# ------------------------------------------------------------
+theme:
+  name: "material"
+  language: "nl"
+  features:
+    - navigation.instant
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - content.code.copy
+    - content.code.annotate
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+  palette:
+    # Wordt overschreven door custom CSS (Mandarin oranje #e55039)
+    primary: "deep-orange"
+    accent: "orange"
+  font:
+    text: "Segoe UI"
+    code: "Consolas"
+  logo: "assets/mandarin-logo-m.png"
+  favicon: "assets/mandarin-logo-m.png"
+
+# ------------------------------------------------------------
+# 4. Custom Styling - Mandarin Stylesheet
+# Eigendom: Presentatie Architect
+# ------------------------------------------------------------
+extra_css:
+  - styles/mandarin.css
+
+extra_javascript: []
+
+# ------------------------------------------------------------
+# 5. Plugins
+# ------------------------------------------------------------
+plugins:
+  - search:
+      lang: nl
+
+# ------------------------------------------------------------
+# 6. Markdown Extensies
+# ------------------------------------------------------------
+markdown_extensions:
+  # Python Markdown
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+
+  # Python Markdown Extensions
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# ------------------------------------------------------------
+# 7. Navigatiestructuur
+# Primaire verantwoordelijkheid: Publicatie Steward
+# ------------------------------------------------------------
+nav:
+  - Home: index.md
+  
+  - Strategie:
+      - Fundamentele Hypothese: fundamentele-hypothese.md
+      - Strategische Intenties: strategische-intenties.md
+
+# ------------------------------------------------------------
+# 8. Extra Configuratie
+# ------------------------------------------------------------
+extra:
+  social: []
+  generator: false  # Verberg "Made with Material for MkDocs"
+
+# ------------------------------------------------------------
+# 9. Copyright
+# ------------------------------------------------------------
+copyright: "Copyright &copy; 2026 Mandarin Team"
+
+# ------------------------------------------------------------
+# Metadata
+# ------------------------------------------------------------
+# Gegenereerd door: Publicatie Steward
+# Template: publicatie-steward.mkdocs.template.md
+# Stylesheet: docs/styles/mandarin.css (Presentatie Architect)
+# Datum: 2026-02-06
+# Versie: 1.0
