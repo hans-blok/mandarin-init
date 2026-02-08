@@ -3,9 +3,15 @@
 Fetch and organize agents from mandarin-agents repository.
 
 This script fetches agent definitions (charters, prompts, runners) from the
-mandarin-agents GitHub repository (including .github directory) based on a published 
-manifest (agents-publicatie.json). It organizes files into the workspace according 
-to their type and applies filtering based on value streams.
+mandarin-agents GitHub repository (including .github directory) based on a
+published manifest (agents-publicatie.json).
+
+Manifest bron:
+- Primair: workspace-local manifest in temp/agents-publicatie.json
+- Fallback: manifest in de root van de mandarin-agents repository
+
+Het script organiseert bestanden in de workspace volgens hun type en past
+filtering toe op basis van value streams.
 
 Usage:
     python fetch_mandarin_agents.py kennispublicatie
@@ -89,10 +95,56 @@ class ManifestParser:
     def parse(self) -> Tuple[List[Agent], Dict[str, str], Dict[str, str]]:
         """Parse manifest and return agents, metadata, and location templates.
         
-        Supports both v1.x (flat list) and v2.x (nested by value stream) format.
+        Supports multiple manifest format varianten:
+        - v1.x: vlakke lijst met `agents` array
+        - v2.x: geneste structuur met `valueStreams` object
+        - v3.x: aggregatie-manifest met `metadata` + `value_streams` lijst
         """
         self._data = json.loads(self.manifest_path.read_text(encoding="utf-8"))
         
+        # v3.x formaat: aggregatie-manifest met metadata + value_streams lijst
+        if "metadata" in self._data and "value_streams" in self._data:
+            meta = self._data.get("metadata", {})
+            version = str(meta.get("versie", "unknown"))
+            metadata = {
+                "version": version,
+                "published_at": str(meta.get("gegenereerd_op", "unknown")),
+            }
+
+            # Nieuwe structuur: value_streams -> code + fasen + agents
+            value_streams = self._data.get("value_streams", [])
+            for vs in value_streams:
+                code = str(vs.get("code", "")).strip()
+                if not code:
+                    continue
+                fasen = vs.get("fasen", [])
+                for fase in fasen:
+                    volgnummer = str(fase.get("volgnummer", "")).strip()
+                    if not volgnummer:
+                        continue
+                    pattern = f"{code}.{volgnummer}"
+                    for agent_data in fase.get("agents", []):
+                        if not isinstance(agent_data, dict):
+                            continue
+                        name = agent_data.get("naam")
+                        if not name:
+                            continue
+                        agent = Agent(
+                            name=str(name),
+                            value_stream=pattern,
+                            charter_count=int(agent_data.get("aantal_charters", 0)),
+                            prompt_count=int(agent_data.get("aantal_prompts", 0)),
+                            agent_count=int(agent_data.get("aantal_agent_files", 0)),
+                            runner_count=0,
+                        )
+                        self._agents.append(agent)
+
+            # v3.x manifest bevat geen expliciete locatiesectie
+            self._locations = {}
+            metadata["agent_count"] = str(len(self._agents))
+            return self._agents, metadata, self._locations
+
+        # v1.x/v2.x formaten
         # Extract metadata
         version = str(self._data.get("versie", "unknown"))
         metadata = {
@@ -146,6 +198,21 @@ class ManifestParser:
     
     def get_value_streams(self) -> List[str]:
         """Extract unique value streams from parsed agents."""
+        # v3.x formaat: value_streams lijst met code + fasen
+        if "value_streams" in self._data and isinstance(self._data["value_streams"], list):
+            streams = set()
+            for vs in self._data["value_streams"]:
+                code = str(vs.get("code", "")).strip()
+                if not code:
+                    continue
+                fasen = vs.get("fasen", [])
+                for fase in fasen:
+                    volgnummer = str(fase.get("volgnummer", "")).strip()
+                    if not volgnummer:
+                        continue
+                    streams.add(f"{code}.{volgnummer}".lower())
+            return sorted(streams)
+
         # For v2.x format, check if valueStreams key exists in data
         if "valueStreams" in self._data and isinstance(self._data["valueStreams"], dict):
             streams = {vs.lower() for vs in self._data["valueStreams"].keys() if vs.lower() != "utility"}
@@ -207,7 +274,18 @@ class FileOrganizer:
         self.scripts_dir = workspace / "scripts"
     
     def resolve_files(self, agents: List[Agent], value_stream: str) -> Tuple[List[FileOperation], List[str]]:
-        """Resolve agent files to copy operations."""
+        """Resolve agent files to copy operations.
+
+        Er zijn twee modi:
+        - Manifest/locatie modus (oude stijl met `locaties` in manifest)
+        - Artefacten modus (nieuwe stijl, gebaseerd op artefacten/<code>/<code>.<fase>.<agent-naam>)
+        """
+        # Nieuwe artefacten-modus: gebruik folderstructuur als bron
+        artefacten_dir = self.repo_path / "artefacten"
+        if artefacten_dir.exists():
+            return self._resolve_from_artefacten(agents, value_stream, artefacten_dir)
+
+        # Legacy modus op basis van locaties in manifest
         operations: List[FileOperation] = []
         warnings: List[str] = []
         
@@ -246,6 +324,98 @@ class FileOrganizer:
                     warnings.append(f"{agent.name}: runner module not found")
         
         return operations, warnings
+
+    def _resolve_from_artefacten(
+        self,
+        agents: List[Agent],
+        value_stream: str,
+        artefacten_dir: Path,
+    ) -> Tuple[List[FileOperation], List[str]]:
+        """Resolve files using artefacten/<code>/<code>.<fase>.<agent-naam> structuur."""
+        operations: List[FileOperation] = []
+        warnings: List[str] = []
+
+        # Extract value stream code (voorvoegsel voor nested folder)
+        if "." in value_stream:
+            vs_code = value_stream.split(".", 1)[0]
+        else:
+            vs_code = value_stream
+
+        vs_dir = artefacten_dir / vs_code
+        if not vs_dir.exists():
+            warnings.append(
+                f"Value stream folder not found for {value_stream} "
+                f"(expected {vs_dir.relative_to(self.repo_path)})"
+            )
+            return operations, warnings
+
+        for agent in agents:
+            folder_name = f"{value_stream}.{agent.name}"
+            agent_folder = vs_dir / folder_name
+
+            if not agent_folder.exists() or not agent_folder.is_dir():
+                warnings.append(
+                    f"{agent.name}: artefacten folder not found "
+                    f"({agent_folder.relative_to(self.repo_path)})"
+                )
+                continue
+
+            folder_ops = self._scan_agent_folder(agent_folder, agent)
+            if folder_ops:
+                operations.extend(folder_ops)
+            else:
+                warnings.append(
+                    f"{agent.name}: no files found in "
+                    f"{agent_folder.relative_to(self.repo_path)}"
+                )
+
+        return operations, warnings
+
+    def _scan_agent_folder(self, folder: Path, agent: Agent) -> List[FileOperation]:
+        """Scan één agent-folder en maak FileOperations.
+
+        Mapping:
+        - *.charter.md  -> charters-agents/<agent-naam>.md
+        - *.prompt.md   -> .github/prompts/<bestandsnaam>
+        - *.agent.md    -> .github/agents/<bestandsnaam>
+        - *.py (runner) -> scripts/runners/<bestandsnaam>
+        """
+        operations: List[FileOperation] = []
+
+        runners_dir = self.workspace / "scripts" / "runners"
+        runners_dir.mkdir(parents=True, exist_ok=True)
+
+        for file_path in folder.iterdir():
+            name = file_path.name
+
+            # Boundary-bestanden negeren
+            if name.endswith(".boundary.md"):
+                continue
+
+            # Charters
+            if name.endswith(".charter.md") and file_path.is_file():
+                dest = self.charters_dir / f"{agent.name}.md"
+                operations.append(FileOperation(source=file_path, destination=dest))
+                continue
+
+            # Prompts
+            if name.endswith(".prompt.md") and file_path.is_file():
+                dest = self.prompts_dir / name
+                operations.append(FileOperation(source=file_path, destination=dest))
+                continue
+
+            # Agent contracten
+            if name.endswith(".agent.md") and file_path.is_file():
+                dest = self.agents_dir / name
+                operations.append(FileOperation(source=file_path, destination=dest))
+                continue
+
+            # Runners (.py in agent-folder)
+            if name.endswith(".py") and file_path.is_file():
+                dest = runners_dir / name
+                operations.append(FileOperation(source=file_path, destination=dest))
+
+        return operations
     
     def _resolve_charter(self, agent: Agent) -> FileOperation | None:
         """Resolve charter file for agent using manifest location template."""
@@ -578,7 +748,11 @@ Examples:
     parser.add_argument(
         "--manifest",
         default="agents-publicatie.json",
-        help="Manifest filename in repo root (default: agents-publicatie.json)",
+        help=(
+            "Manifest-bestandsnaam (default: agents-publicatie.json). "
+            "Het script zoekt eerst in temp/<naam> in de workspace en valt "
+            "anders terug op <repo-root>/<naam>."
+        ),
     )
     parser.add_argument(
         "--repo-url",
@@ -600,9 +774,17 @@ Examples:
         # Fetch repository
         repo_mgr = RepositoryManager(args.repo_url, repo_dir)
         repo_path = repo_mgr.fetch()
-        
-        # Parse manifest
-        manifest_path = repo_path / args.manifest
+
+        # Resolve manifest-pad:
+        # 1) Workspace-local: temp/<manifest>
+        # 2) Fallback: <repo-root>/<manifest>
+        workspace_manifest = workspace / "temp" / args.manifest
+        if workspace_manifest.exists():
+            manifest_path = workspace_manifest
+            print(f"[INFO] Using workspace manifest: {manifest_path.relative_to(workspace)}")
+        else:
+            manifest_path = repo_path / args.manifest
+            print(f"[INFO] Using repository manifest: {manifest_path.relative_to(repo_path)}")
         parser_obj = ManifestParser(manifest_path)
         agents, metadata, locations = parser_obj.parse()
         

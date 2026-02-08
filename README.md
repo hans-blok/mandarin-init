@@ -22,3 +22,8 @@ in shell: pip install -r requirements.txt
 mkdocs serve -a 127.0.0.1:8005
 
 http://127.0.0.1:8005/
+
+Get-Process | Where-Object { $_.Name -like "*python*" -or $_.ProcessName -like "*mkdocs*" } | Select-Object Id, ProcessName, Path
+
+Voorbeeld om te stoppen
+Stop-Process -Id 13428, 31804, 37612 -Force
